@@ -2970,7 +2970,13 @@ soundManager.onready(function() {
 	//intro screen
 	$('#the_game').load('intro.html', function() {
 		
-		$('#lightbox, #items, #switch_sound, #settings').hide(); 
+		$('#lightbox, #items, #switch_sound, #settings').hide();
+		
+		// Force reload of intro house image with timestamp
+		setTimeout(function() {
+			var timestamp = new Date().getTime();
+			$('#house').css('background-image', 'url(../images/intro_house_vaping.png?' + timestamp + ')');
+		}, 100); 
 		
 		var enter_pulse_interval = 500,
 				house_float_interval = 2000;
