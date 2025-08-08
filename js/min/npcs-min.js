@@ -69,28 +69,8 @@ var npc = {
 			movement($('#fish_click_area'));
 		},
 		
-		// Quiz/react function with multiple choice questions
+		// Updated react function for picture viewing and vaping quiz
 		react: function() {
-			var quiz = {
-				"question1": {
-					"question": "What is the capital of France?",
-					"options": ["London", "Paris", "Berlin", "Rome"],
-					"answer": "Paris"
-				},
-				"question2": {
-					"question": "What is 2 + 2?",
-					"options": ["3", "4", "5", "6"],
-					"answer": "4"
-				},
-				"question3": {
-					"question": "What is the color of the sky?",
-					"options": ["Blue", "Green", "Red", "Yellow"],
-					"answer": "Blue"
-				}
-			};
-
-			var currentQuestion = "question1";
-
 			$(npc.fish.select()).off('click.npcfish').on('click.npcfish', function() {
 				room.the_player.go_to.start({
 					target: '2-15', // a position near the fish in the room
@@ -100,10 +80,91 @@ var npc = {
 						npc.fish.move_to_player($('#fish_click_area'));
 						room.center(true, 100);
 
-						displayQuestion();
+						// Check if user has viewed the picture
+						var viewedPicture = $.jStorage.get('viewed_picture', false);
+						var watchedVideo = $.jStorage.get('watched_video', false);
+						var completedQuiz = $.jStorage.get('completed_vaping_quiz', false);
+
+						if (!viewedPicture) {
+							// User hasn't looked at the picture yet
+							dialogue_box.display({
+								character: 'Fish',
+								picture: 'aquarium_fish_big.png',
+								text: 'Hello! Before we can proceed, you need to examine the picture on the wall. Go click on it first, then come back to me.',
+								options: ['Okay, I\'ll check the picture']
+							});
+
+							$('#options').off('click').on('click', 'li', function() {
+								dialogue_box.destroy();
+								npc.fish.move(true);
+							});
+						} else if (!watchedVideo) {
+							// User viewed picture but hasn't watched video yet
+							dialogue_box.display({
+								character: 'Fish',
+								picture: 'aquarium_fish_big.png',
+								text: 'Great! You\'ve looked at the picture. Now you need to watch the educational video about vaping health effects. Click on the picture again to watch it, then come back to me for a quiz.',
+								options: ['I\'ll watch the video first']
+							});
+
+							$('#options').off('click').on('click', 'li', function() {
+								dialogue_box.destroy();
+								npc.fish.move(true);
+							});
+						} else if (!completedQuiz) {
+							// User has watched video, now present the health quiz
+							dialogue_box.display({
+								character: 'Fish',
+								picture: 'aquarium_fish_big.png',
+								text: 'Perfect! I see you\'ve watched the educational video. Now let\'s test what you learned with a short quiz about vaping health effects.',
+								options: ['I\'m ready for the quiz']
+							});
+
+							$('#options').off('click').on('click', 'li', function() {
+								dialogue_box.destroy();
+								npc.fish.startVapingQuiz();
+							});
+						} else {
+							// Quiz completed, unlock corridor
+							dialogue_box.display({
+								character: 'Fish',
+								picture: 'aquarium_fish_big.png',
+								text: 'Excellent! You\'ve completed the health education. The corridor is now unlocked. You can proceed to the next area.',
+								options: ['Thank you!']
+							});
+
+							$('#options').off('click').on('click', 'li', function() {
+								dialogue_box.destroy();
+								npc.fish.move(true);
+								// Enable corridor access
+								$('#door_exit').removeClass('locked').addClass('unlocked');
+							});
+						}
 					}
 				});
 			});
+		},
+
+		startVapingQuiz: function() {
+			var quiz = {
+				"question1": {
+					"question": "What is the one common oral health issue associated with frequent vaping? HINT: think about what happens when your mouth is exposed to heat and chemicals frequently.",
+					"options": ["Strengthening of the tooth surface", "Dry mouth", "Increased saliva production"],
+					"answer": "Dry mouth"
+				},
+				"question2": {
+					"question": "How does vaping impact gum health over time? HINT: consider how nicotine and chemicals might affect blood flow and tissue repair.",
+					"options": ["It promotes gum regeneration", "It reduces inflammation in the gums", "It increases the risk of gum disease"],
+					"answer": "It increases the risk of gum disease"
+				},
+				"question3": {
+					"question": "Which of the following is a potential visible effect of vaping on the mouth? HINT: think about how vapor residues and chemicals could interact with the outer layer of your teeth.",
+					"options": ["Whiter tooth surfaces", "Tooth staining", "No visible effects"],
+					"answer": "Tooth staining"
+				}
+			};
+
+			var currentQuestion = "question1";
 
 			function displayQuestion() {
 				var questionData = quiz[currentQuestion];
@@ -119,7 +180,7 @@ var npc = {
 					if (selectedOption === questionData.answer) {
 						dialogue_box.display({
 							character: 'Fish',
-							text: 'Correct!',
+							text: 'Correct! Great job understanding the health effects.',
 							options: ['Next Question']
 						});
 						$('#options').off('click').on('click', 'li', function() {
@@ -130,21 +191,25 @@ var npc = {
 								currentQuestion = "question3";
 								displayQuestion();
 							} else {
+								// Quiz completed
 								dialogue_box.display({
 									character: 'Fish',
-									text: 'You have answered all questions correctly!',
+									text: 'Excellent! You\'ve successfully completed the health education quiz. You now understand the important health effects of vaping.',
 									options: ['Finish']
 								});
 								$('#options').off('click').on('click', 'li', function() {
 									dialogue_box.destroy();
 									npc.fish.move(true);
+									// Mark quiz as completed and unlock corridor
+									$.jStorage.set('completed_vaping_quiz', true);
+									$('#door_exit').removeClass('locked').addClass('unlocked');
 								});
 							}
 						});
 					} else {
 						dialogue_box.display({
 							character: 'Fish',
-							text: 'Wrong answer. Try again.',
+							text: 'Not quite right. Think about the hint and try again.',
 							options: ['Try Again']
 						});
 						$('#options').off('click').on('click', 'li', function() {
@@ -153,6 +218,8 @@ var npc = {
 					}
 				});
 			}
+
+			displayQuestion();
 		},
 		
 		move_to_player: function(item, spritely) {

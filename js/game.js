@@ -149,7 +149,7 @@ var game = {
 				.removeClass('small');
 			}
 			
-			//go to the corridor
+						//go to the corridor
 					 
 			$('#door_exit').click(function () {
 				
@@ -159,30 +159,41 @@ var game = {
 						
 						action: function() {
 						
+							// Check if player has completed the vaping quiz
+							var completedQuiz = $.jStorage.get('completed_vaping_quiz', false);
+							
+							if (!completedQuiz) {
+								sound_door_locked.play();
+								$('#player').text_cloud('Complete the health education with the fish first!', 2000);
+								return;
+							}
+						
 							//check if player has got the key
 							if ( $.inArray("key", collected) === -1) { 
-	
+
 								sound_door_locked.play();
 								$('#player').text_cloud('Locked!', 1000); 
 							
 							} else if ( $.inArray("key", used) === -1) {
 							
 								items.use('#key');
-	
+
 								$('#option_0').click(function() {
-	
+
 									dialogue_box.destroy();
 									sound_door.play();
-									game.corridor(14,0);
+									// Go to room_dirt to show the consequences of poor health choices
+									game.room_dirt(5,6);
 									
 								});
 							
 							} else {
 								sound_door.play();
-								game.corridor(14,0);
+								// Go to room_dirt to show the consequences of poor health choices
+								game.room_dirt(5,6);
 							
 							}
-	
+
 						}  
 					
 				});
@@ -240,11 +251,23 @@ var game = {
 					target: '3-6',
 					
 					action: function() {
-						sound_teleport.play();
-						if ( $.inArray("scene_furnace", played) === -1 ) {
-							game.picture_snow(7, 8); 
+						// Mark that user has viewed the picture
+						$.jStorage.set('viewed_picture', true);
+						
+						// Check if user has already watched the video
+						var watchedVideo = $.jStorage.get('watched_video', false);
+						
+						if (!watchedVideo) {
+							// Show video overlay
+							game.showVideoOverlay();
 						} else {
-							game.picture(7, 8); 
+							// Normal picture navigation
+							sound_teleport.play();
+							if ( $.inArray("scene_furnace", played) === -1 ) {
+								game.picture_snow(7, 8); 
+							} else {
+								game.picture(7, 8); 
+							}
 						}
 					}  
 				
@@ -261,6 +284,353 @@ var game = {
 		});
 
 	//room - END
+	},
+
+	room_dirt: function(x,y) {
+	
+		//generates room with dirt background (after vaping education)
+		room.generate({
+		
+		inject:'room',
+		
+		grid_width: 13,
+		grid_height: 19,
+		collision_nodes: [
+		
+		//chair
+		'7-9', 
+		
+		//shelf
+		'0-14', '0-15', '1-15', '1-14',
+		
+		//bed
+		'0-4', '0-5', '0-6', '0-7', '0-8', '0-9',
+		'1-4', '1-5', '1-6', '1-7', '1-8', '1-9',
+		'2-4', '2-5', '2-6', '2-7', '2-8', '2-9',
+		
+		//desk
+		'11-7', '11-8', '11-9', '11-10',
+		'12-7', '12-8', '12-9', '12-10',
+		
+		//plant
+		'10-1'
+		
+		],
+		
+		drag_room:true,
+		room_glow: true,
+		
+		player: 'player',
+		player_speed: 100,
+		player_position_x: x,
+		player_position_y: y,
+		
+		volume:50,
+		
+		execute: function() {
+			console.log("DEBUG: Room_dirt execute function called!");
+			
+			// Change background to dirt version
+			$('#room').css('background-image', 'url(../images/room_dirt.jpg)');
+			
+			//check if intro scene has been played
+			if ( $.inArray("scene_intro", played) === -1 ) {
+
+				//add information that scene has been played
+				var get_played = $.jStorage.get('played');
+
+				get_played.push('scene_intro');
+				
+				$.jStorage.set('played', get_played);
+
+				//player is confused
+				$('#player').text_cloud('The room looks... different. The effects of poor choices.', 3000);
+			}
+
+			//item becomes transparent when certain tiles are hovered - ('target'), ('tile1, tile2, etc.')
+			room.transparency( $('#chair'), $('#6-9, #6-8, #7-8, #5-8, #5-7, #4-6, #4-7') );
+			room.transparency( $('#bed, #bed_mask'), $('#2-3, #1-3, #0-3, #1-2, #0-2') );
+			room.transparency( $('#desk, #desk_mask'), $('#12-6, #11-5, #11-6, #10-10, #10-9, #10-8, #10-7, #10-6, #10-5, #9-9, #9-8, #9-7, #9-6, #9-5') );
+			room.transparency( $('#shelf, #shelf_mask'), $('#1-13, #0-13, #0-12') );
+			room.transparency( $('#plant'), $('#9-1, #9-0, #10-0') );
+			
+			//pulsing light
+			room.pulse( $('#glow'), 5000 );
+
+			//assign tooltips
+			$('#window, #door_exit, #plant_check').tooltip('left');
+			$('#the_game').find('#note').tooltip('right');
+			$('#water, #picture').tooltip('right');
+			
+			//bubbles!
+			$('#bubbles').sprite({
+				fps: 8,
+				no_of_frames: 8
+			});
+
+			// Start the fish animation - fish still provides education
+			console.log("DEBUG: About to call npc.fish.swim()");
+			if (typeof npc !== 'undefined' && npc.fish && typeof npc.fish.swim === 'function') {
+				npc.fish.swim();
+				console.log("DEBUG: npc.fish.swim() called successfully");
+			} else {
+				console.log("ERROR: npc.fish.swim is not available!", typeof npc, npc);
+			}
+
+			/* ===ITEMS=== */
+
+			//look through the window
+			$('#window').click(function () {
+
+				//on click goes to the specified target, then fires function (or not ;) )
+				room.the_player.go_to.start({
+				
+					target: '5-0',
+					
+					action: function() {
+						
+						sound_door.play();
+						view.start([['bird', '3000', '10'], ['outside_fish', '3000', '-10']], function() {
+							$('#lightbox').fadeIn('slow');
+						});
+
+					}  
+				
+				});
+				
+			});
+
+			if ( $.inArray("scene_furnace", played) !== -1 ) {
+				$('#picture_winter').css('background', 'none');
+				$('#plant')
+				.removeClass('small');
+			}
+			
+			//go to the corridor - now leads back to normal room
+			$('#door_exit').click(function () {
+				
+				room.the_player.go_to.start({
+					
+						target: '6-18',
+						
+						action: function() {
+						
+							// Check if player has completed the vaping quiz
+							var completedQuiz = $.jStorage.get('completed_vaping_quiz', false);
+							
+							if (!completedQuiz) {
+								sound_door_locked.play();
+								$('#player').text_cloud('Complete the health education with the fish first!', 2000);
+								return;
+							}
+						
+							//check if player has got the key
+							if ( $.inArray("key", collected) === -1) { 
+
+								sound_door_locked.play();
+								$('#player').text_cloud('Locked!', 1000); 
+							
+							} else if ( $.inArray("key", used) === -1) {
+							
+								items.use('#key');
+
+								$('#option_0').click(function() {
+
+									dialogue_box.destroy();
+									sound_door.play();
+									// Go back to normal room to show contrast
+									game.room(14,0);
+									
+								});
+							
+							} else {
+								sound_door.play();
+								// Go back to normal room
+								game.room(14,0);
+							
+							}
+
+						}  
+					
+				});
+				
+			});
+			
+			//go to the aquarium
+			$('#water').click(function () {
+
+				room.the_player.go_to.start({
+				
+					target: '2-15',
+					
+					action: function() {
+					
+						if ( $.inArray("key", collected) === -1) {
+						
+							//disables clicking
+							scene.no_click(true);
+						
+							room.center(true,2000);
+						
+							$(room.player_body())
+							.css('background-position','-310px 0')
+							.animate({ opacity: 0 }, 2000);
+
+							$('#player').text_cloud('This aquarium is... Strange', 1500);
+
+							setTimeout(function() {
+
+								//enables clicking
+								scene.no_click(false);
+								sound_teleport.play();
+								game.aquarium(20,5);  
+							
+							}, 2000);
+						
+						} else {
+								sound_teleport.play();
+								game.aquarium(20,5); 
+						
+						}
+
+					}  
+				
+				});
+				
+			});
+
+			//go to the picture
+			$('#picture').click(function () {
+
+				room.the_player.go_to.start({
+				
+					target: '3-6',
+					
+					action: function() {
+						// Mark that user has viewed the picture
+						$.jStorage.set('viewed_picture', true);
+						
+						// Check if user has already watched the video
+						var watchedVideo = $.jStorage.get('watched_video', false);
+						
+						if (!watchedVideo) {
+							// Show video overlay
+							game.showVideoOverlay();
+						} else {
+							// Normal picture navigation
+							sound_teleport.play();
+							if ( $.inArray("scene_furnace", played) === -1 ) {
+								game.picture_snow(7, 8); 
+							} else {
+								game.picture(7, 8); 
+							}
+						}
+					}  
+				
+				});
+				
+			});
+
+		//execute - END  
+		}
+		
+		});
+
+	//room_dirt - END
+	},
+
+	showVideoOverlay: function() {
+		// Create video overlay
+		var videoOverlay = $('<div/>', {
+			id: 'video-overlay',
+			css: {
+				position: 'fixed',
+				top: 0,
+				left: 0,
+				width: '100%',
+				height: '100%',
+				backgroundColor: 'rgba(0,0,0,0.9)',
+				zIndex: 10000,
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				flexDirection: 'column'
+			}
+		});
+
+		// Create video container
+		var videoContainer = $('<div/>', {
+			css: {
+				position: 'relative',
+				width: '80%',
+				maxWidth: '800px',
+				height: '60%',
+				backgroundColor: '#000'
+			}
+		});
+
+		// Create YouTube iframe
+		var iframe = $('<iframe/>', {
+			src: 'https://www.youtube.com/embed/xmWRZiAviiY?autoplay=1&rel=0',
+			css: {
+				width: '100%',
+				height: '100%',
+				border: 'none'
+			},
+			allow: 'autoplay; encrypted-media'
+		});
+
+		// Create close button
+		var closeButton = $('<button/>', {
+			text: 'Close Video & Continue',
+			css: {
+				position: 'absolute',
+				bottom: '-50px',
+				left: '50%',
+				transform: 'translateX(-50%)',
+				padding: '10px 20px',
+				backgroundColor: '#007cba',
+				color: 'white',
+				border: 'none',
+				borderRadius: '5px',
+				fontSize: '16px',
+				cursor: 'pointer'
+			}
+		});
+
+		// Add click handler for close button
+		closeButton.click(function() {
+			// Mark video as watched
+			$.jStorage.set('watched_video', true);
+			
+			// Remove overlay
+			videoOverlay.remove();
+			
+			// Show completion message
+			dialogue_box.display({
+				character: false,
+				picture: false,
+				text: 'Great! You\'ve watched the educational video about vaping health effects. Now go back to the fish to take a quiz about what you learned.',
+				options: ['Okay']
+			});
+
+			$('#options').off('click').on('click', 'li', function() {
+				dialogue_box.destroy();
+			});
+		});
+
+		// Assemble the overlay
+		videoContainer.append(iframe).append(closeButton);
+		videoOverlay.append(videoContainer);
+		$('body').append(videoOverlay);
+
+		// Prevent background scrolling
+		$('body').css('overflow', 'hidden');
+		
+		// Restore scrolling when overlay is removed
+		videoOverlay.on('remove', function() {
+			$('body').css('overflow', 'auto');
+		});
 	},
 	
 	aquarium: function(x,y) {
