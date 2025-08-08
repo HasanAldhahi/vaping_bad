@@ -1,86 +1,159 @@
 var npc = {
 
 	fish: {
-	
 		select: function() {
-		
 			var fish = $('#fish, #fish_click_area');
 			return fish;
-			
 		},
-		
+
 		click_area: function() {
-		
-			$('<div/>', {
-				id: 'fish_click_area'
-			})
-			.appendTo('#floor');
-		
+			if (!$('#fish_click_area').length) {
+				$('<div/>', {
+					id: 'fish_click_area'
+				})
+				.appendTo('#floor');
+			}
 		},
-	
+
 		swim: function() {
-
+			console.log("DEBUG: swim() function has been called."); // Debugging line
 			if ($.inArray("disappear", fish) === -1) {
-
-				//intiate spritely 
-				$(npc.fish.select())
-				.sprite({
+				// Initiate spritely 
+				$(npc.fish.select()).sprite({
 					fps: 8,
 					no_of_frames: 5
 				});
-	
+
 				npc.fish.click_area();
 				npc.fish.move();
 				npc.fish.react();
 
 				// hide key
 				$('#key').hide();
-			
+
 			} else {
-			
 				$(npc.fish.select()).remove();
-				
 				npc.fish.key();
-			
 			}
-
 		},
-		
-		move: function(repeat) {     
 
+		move: function(repeat) {
 			var fish = $('#fish');
 
 			if (!repeat) {
-				fish.spState(2);
+				fish.spState(2); // Start with the second row of sprites
 			} else {
 				fish.spToggle().fps(8).spState(2);
-			}  
-							
-			//movement     
-			var repeat = function(item) {
-				item    
-				.animate({     
-					left:242,     
-					top:-236     
-				}     
-				, 5000, 'linear', function() {     
-					item.spState(3);     
-				})     
-				.animate({     
-					left:-129,     
-					top:-84     
-				}     
-				, 5000, 'linear', function() {  
-					if(!window.test) {
-						item.spState(2); 
-						repeat(item);
-					}
-				})   
 			}
-			repeat(fish);
-			repeat($('#fish_click_area'));
-				 
-		},     
+
+			// Defines the movement loop
+			var movement = function(item) {
+				// New coordinates for room.html
+				var new_pos_1 = { left: 500, top: 150 };
+				var new_pos_2 = { left: 100, top: 300 };
+
+				item
+					.animate(new_pos_1, 8000, 'linear', function() {
+						item.spState(1); // Change to the first row of sprites to "turn" left
+					})
+					.animate(new_pos_2, 8000, 'linear', function() {
+						if (!window.test) {
+							item.spState(2); // Change back to the second row to "turn" right
+							movement(item); // Repeat the movement
+						}
+					});
+			};
+
+			// Animate both the fish and its invisible click area
+			movement(fish);
+			movement($('#fish_click_area'));
+		},
+		
+		// Quiz/react function with multiple choice questions
+		react: function() {
+			var quiz = {
+				"question1": {
+					"question": "What is the capital of France?",
+					"options": ["London", "Paris", "Berlin", "Rome"],
+					"answer": "Paris"
+				},
+				"question2": {
+					"question": "What is 2 + 2?",
+					"options": ["3", "4", "5", "6"],
+					"answer": "4"
+				},
+				"question3": {
+					"question": "What is the color of the sky?",
+					"options": ["Blue", "Green", "Red", "Yellow"],
+					"answer": "Blue"
+				}
+			};
+
+			var currentQuestion = "question1";
+
+			$(npc.fish.select()).off('click.npcfish').on('click.npcfish', function() {
+				room.the_player.go_to.start({
+					target: '2-15', // a position near the fish in the room
+					action: function() {
+						$(room.player_body()).css('background-position', '-310px 0px');
+						npc.fish.move_to_player($('#fish'), true);
+						npc.fish.move_to_player($('#fish_click_area'));
+						room.center(true, 100);
+
+						displayQuestion();
+					}
+				});
+			});
+
+			function displayQuestion() {
+				var questionData = quiz[currentQuestion];
+				dialogue_box.display({
+					character: 'Fish',
+					picture: 'aquarium_fish_big.png',
+					text: questionData.question,
+					options: questionData.options
+				});
+
+				$('#options').off('click').on('click', 'li', function() {
+					var selectedOption = $(this).text();
+					if (selectedOption === questionData.answer) {
+						dialogue_box.display({
+							character: 'Fish',
+							text: 'Correct!',
+							options: ['Next Question']
+						});
+						$('#options').off('click').on('click', 'li', function() {
+							if (currentQuestion === "question1") {
+								currentQuestion = "question2";
+								displayQuestion();
+							} else if (currentQuestion === "question2") {
+								currentQuestion = "question3";
+								displayQuestion();
+							} else {
+								dialogue_box.display({
+									character: 'Fish',
+									text: 'You have answered all questions correctly!',
+									options: ['Finish']
+								});
+								$('#options').off('click').on('click', 'li', function() {
+									dialogue_box.destroy();
+									npc.fish.move(true);
+								});
+							}
+						});
+					} else {
+						dialogue_box.display({
+							character: 'Fish',
+							text: 'Wrong answer. Try again.',
+							options: ['Try Again']
+						});
+						$('#options').off('click').on('click', 'li', function() {
+							displayQuestion();
+						});
+					}
+				});
+			}
+		},
 		
 		move_to_player: function(item, spritely) {
 			if (spritely) item.spToggle();
@@ -91,145 +164,20 @@ var npc = {
 				top:-190
 			}, 200)
 			.css('background-position','0 0'); 
-		
 		},
-		
-		react: function() {
-		
-			$(npc.fish.select()).click(function() {
-				room.the_player.go_to.start({
-				
-					target: '1-3',
-					
-					action: function() {
 
-						$(room.player_body()).css('background-position', '-310px 0px');
-						npc.fish.move_to_player($('#fish'), true);
-						npc.fish.move_to_player($('#fish_click_area'));
-						room.center(true,100);
-						
-						/*dialogue
-						*/
-						
-						//dialogue LEVEL 1
-						
-						dialogue_box.display({
-							character:'Fish',
-							picture:'aquarium_fish_big.png',
-							text: 'Hello!',
-							options: ['Hi.', 'I don\'t have time to talk with you.']
-						}); 
-					
-						$('#options').on('click', '#option_1', function() {
-							dialogue_box.destroy();
-							npc.fish.move(true);
-							$('#fish').text_cloud('Oh really? I have A LOT.', 8000);
-						});
-						
-						//dialogue LEVEL 2
-						$('#options').on('click', '#option_0', function() {
-							dialogue_box.display({
-								character:'Fish',
-								picture:'aquarium_fish_big.png',
-								text: 'Tell me... Did you look through the window?',
-								options: ['Yes I did.', 'No.']
-							}); 
-
-							$('#options').on('click', '#option_1', function() {
-								dialogue_box.destroy();
-									npc.fish.move(true);
-								$('#fish').text_cloud('So please take a look and tell me what did you see.', 10000); 
-								$('#teleport, #exit').show('slow');
-							});
-							
-							//dialogue LEVEL 3
-							
-							if ($.inArray("window", fish) === -1) {
-							
-								$('#options').on('click', '#option_0', function() {
-									dialogue_box.display({
-										character:'Fish',
-										picture:'aquarium_fish_big.png',
-										text: 'So what did you see then?',
-										options: ['...']
-									});
-									
-									$('#options').on('click', '#option_0', function() {
-										dialogue_box.destroy();
-										npc.fish.move(true);
-										$('#fish').text_cloud('Yeah. C\'mon! Check that window.', 8000); 
-										$('#teleport, #exit').show('slow');
-									});
-									
-								}); 
-							
-							} else {
-							
-								$('#options').on('click', '#option_0', function() {
-									dialogue_box.display({
-										character:'Fish',
-										picture:'aquarium_fish_big.png',
-										text: 'So what did you see than?',
-										options: ['Many flying... Objects?']
-									});
-									
-									$('#options').on('click', '#option_0', function() {
-										dialogue_box.destroy();
-										$('#fish_click_area').remove();
-										$('#fish').text_cloud('Wow. I have to check it out!', 3000); 
-										$('#fish')
-										.stop(true,true)
-										.delay(2000)
-										.animate({
-											opacity:0
-										}, 3000, function() {
-											$(this).remove();
-										});
-										
-										npc.fish.key();
-										
-										var get_fish = $.jStorage.get('fish');
-						
-										get_fish.push('disappear');
-										
-										$.jStorage.set('fish', get_fish);
-
-									});
-									
-								});
-							
-							} 
-							
-						});
-
-					}
-				 }); 
-			});
-		
-		},
-		
 		key: function() {
-			
 			//take the key
 			$('#aquarium').find('#key').click(function () {
-
 				room.the_player.go_to.start({
-				
 					target: '18-5',
-					
 					action: function() {
-
 						items.take('#key');
 						$('#teleport, #exit').show('slow'); 
-
 					}  
-				
 				});
-				
 			})
-			
 			$('#key').fadeIn();
-		
 		}
 	// fish - END
 	},

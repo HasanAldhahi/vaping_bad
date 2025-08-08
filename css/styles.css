@@ -516,6 +516,33 @@
   background: url(../images/room_bubbles.png);
   opacity: .3;
 }
+
+/* Fish inside the aquarium frame (room) */
+#room #frame_fish_container {
+  position: absolute;
+  /* position over the aquarium frame area */
+  left: 177px;
+  top: 183px;
+  width: 57px;
+  height: 93px;
+  z-index: 47; /* same as aquarium so it stays inside */
+  pointer-events: auto; /* allow clicking the fish */
+  overflow: hidden; /* confine movement */
+}
+
+#room #frame_fish {
+  position: absolute;
+  width: 24px;
+  height: 16px;
+  left: 6px;
+  top: 60px;
+  background: url(../images/aquarium_fish.png) no-repeat;
+  background-size: contain;
+  /* Movement is JS-driven to sync with click area */
+}
+
+/* clickable area inside frame follows fish via JS; style for pointer */
+#room #frame_fish_click_area { cursor: pointer; }
 #room #shelf {
   width: 69px;
   height: 314px;
@@ -599,6 +626,8 @@
   cursor: pointer;
   background: none;
 }
+
+
 #room #water {
   -moz-transform-origin: top left;
   -webkit-transform-origin: top left;
@@ -635,22 +664,22 @@
   left: -46px;
   top: -29px;
 }
-#aquarium #fish,
-#aquarium #fish_click_area {
+#room #fish,
+#room #fish_click_area {
   position: absolute;
-  left: -129px;
-  top: -84px;
+  left: 100px;
+  top: 300px;
 }
-#aquarium #fish {
+#room #fish {
   width: 240px;
   height: 240px;
   background: url(../images/aquarium_fish.png) no-repeat;
 }
-#aquarium #fish .text_cloud {
+#room #fish .text_cloud {
   left: 100px;
   bottom: 200px;
 }
-#aquarium #fish_click_area {
+#room #fish_click_area {
   -moz-transform: translate(20px, 30px);
   -webkit-transform: translate(20px, 30px);
   -o-transform: translate(20px, 30px);
@@ -776,6 +805,27 @@
   background:  url(../images/aquarium_key.png)  no-repeat right;
   cursor: pointer;
 }
+
+/* 
+/* Fish swimming animation */
+@keyframes fish-swim {
+  0% { 
+    transform: translateX(0px) translateY(0px);
+  }
+  25% { 
+    transform: translateX(30px) translateY(-15px);
+  }
+  50% { 
+    transform: translateX(60px) translateY(0px);
+  }
+  75% { 
+    transform: translateX(30px) translateY(15px);
+  }
+  100% { 
+    transform: translateX(0px) translateY(0px);
+  }
+} 
+
 @-webkit-keyframes gate_float {
   0% {
     -webkit-transform: translate(0, 10px);
@@ -2849,6 +2899,19 @@
 #outside_view #fish .text_cloud {
   left: 100px;
   bottom: 200px;
+}
+
+/* Fish in room */
+#fish {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  left: 300px;
+  top: 200px;
+  z-index: 9999;
+  background: url(../images/aquarium_fish.png) no-repeat ;
+  background-size: contain;
+  cursor: pointer;
 }
 #outside_view #tree {
   width: 440px;

@@ -6,6 +6,37 @@
 	cursor:move;
 	background:url(../images/room.jpg) no-repeat;
 
+
+
+
+	#fish,
+	#fish_click_area {
+		position: absolute;
+		left: 100px;
+		top: 300px;
+	}
+	
+	#fish {
+		width: 240px;
+		height: 240px;
+		background: url(../images/aquarium_fish.png) no-repeat;
+
+		.text_cloud {
+			left: 100px;
+			bottom: 200px
+		}
+	}
+	
+	#fish_click_area {
+		.translate(20px, 30px);
+		width: 180px;
+		height: 180px;
+		border-radius:120px;
+		z-index:1000;
+		cursor:pointer
+	}
+	
+
 	#sprite {
 		background: url(../images/room_player.png) no-repeat 0 0
 	}

@@ -42,6 +42,7 @@ var game = {
 		volume:50,
 		
 		execute: function() {
+			console.log("DEBUG: Room execute function called!");
 			
 			//check if intro scene has been played
 			if ( $.inArray("scene_intro", played) === -1 ) {
@@ -77,6 +78,15 @@ var game = {
 				fps: 8,
 				no_of_frames: 8
 			});
+
+			// Start the fish animation
+			console.log("DEBUG: About to call npc.fish.swim()");
+			if (typeof npc !== 'undefined' && npc.fish && typeof npc.fish.swim === 'function') {
+				npc.fish.swim();
+				console.log("DEBUG: npc.fish.swim() called successfully");
+			} else {
+				console.log("ERROR: npc.fish.swim is not available!", typeof npc, npc);
+			}
 
 			/* ===ITEMS=== */
 
@@ -241,6 +251,9 @@ var game = {
 				});
 				
 			});
+
+
+			npc.fish.swim();
 		
 		//execute - END  
 		}
