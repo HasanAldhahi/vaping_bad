@@ -1,3 +1,60 @@
+// Global coin reward system
+window.awardCoins = function(amount) {
+	if (!window.coinCount) {
+		window.coinCount = $.jStorage.get('coinCount') || 0;
+	}
+	
+	window.coinCount += amount;
+	$.jStorage.set('coinCount', window.coinCount);
+	
+	// Update display with animation
+	var coinDisplay = $('#coin-count');
+	coinDisplay.text(window.coinCount);
+	
+	// Add coin animation effect
+	coinDisplay.parent().addClass('coin-earned');
+	setTimeout(function() {
+		coinDisplay.parent().removeClass('coin-earned');
+	}, 1000);
+	
+	// Show reward message
+	if (amount > 0) {
+		var rewardMessage = $('<div class="coin-reward">+' + amount + ' coins!</div>');
+		$('body').append(rewardMessage);
+		
+		setTimeout(function() {
+			rewardMessage.fadeOut(function() {
+				rewardMessage.remove();
+			});
+		}, 2000);
+	}
+};
+
+// Global health penalty system
+window.penalizeHealth = function(penalty) {
+	if (!window.currentHealth) {
+		window.currentHealth = 100;
+	}
+	
+	window.currentHealth -= penalty;
+	if (window.currentHealth < 0) window.currentHealth = 0;
+	
+	// Update display immediately
+	var healthBarInner = $('#health-bar-inner');
+	var healthPercentageDisplay = $('#health-percentage');
+	
+	if (healthBarInner.length && healthPercentageDisplay.length) {
+		healthBarInner.css('width', window.currentHealth + '%');
+		healthPercentageDisplay.text(Math.round(window.currentHealth) + '%');
+		
+		// Add penalty animation effect
+		$('#health-bar-container').addClass('health-penalty');
+		setTimeout(function() {
+			$('#health-bar-container').removeClass('health-penalty');
+		}, 1000);
+	}
+};
+
 var game = {
 
 	room: function(x,y) {
@@ -43,6 +100,64 @@ var game = {
 		
 		execute: function() {
 			console.log("DEBUG: Room execute function called!");
+			
+			// Initialize coin system and show health bar when in gameplay
+			if (!window.coinCount) {
+				window.coinCount = $.jStorage.get('coinCount') || 0;
+			}
+			$('#coin-count').text(window.coinCount);
+			$('#health-bar-container').fadeIn();
+			
+			// Health Bar Timer Logic - starts automatically when entering the room
+			if ( $.inArray("health_bar_started", played) === -1 ) {
+				
+				var time_limit = 60; // Total time in seconds (1 minute)
+				var current_time = time_limit;
+				var healthBarInner = $('#health-bar-inner');
+				var healthPercentageDisplay = $('#health-percentage');
+				
+				// Initialize health at 100%
+				window.currentHealth = 100;
+
+				// Function to update the bar's appearance
+				var updateHealthBar = function() {
+					current_time--;
+
+					// Calculate percentage based on time
+					var timePercentage = (current_time / time_limit) * 100;
+					
+					// Use the lower of time percentage or current health
+					var displayPercentage = Math.min(timePercentage, window.currentHealth);
+					
+					healthBarInner.css('width', displayPercentage + '%');
+					healthPercentageDisplay.text(Math.round(displayPercentage) + '%');
+
+					if (current_time <= 0 || window.currentHealth <= 0) {
+						clearInterval(window.healthBarTimer); // Stop the timer
+						
+						// Game Over logic
+						dialogue_box.display({
+							character: false,
+							picture: false,
+							text: 'Time is up! The house has consumed you.',
+							options: ['Try Again']
+						});
+
+						$('#options').delegate('#option_0', 'click', function() {
+							$.jStorage.flush();
+							window.location.reload();
+						});
+					}
+				};
+
+				// Start the timer
+				window.healthBarTimer = setInterval(updateHealthBar, 1000);
+
+				// Mark the timer as started so it doesn't run again on reload
+				var get_played = $.jStorage.get('played');
+				get_played.push('health_bar_started');
+				$.jStorage.set('played', get_played);
+			}
 			
 			//check if intro scene has been played
 			if ( $.inArray("scene_intro", played) === -1 ) {
@@ -149,7 +264,7 @@ var game = {
 				.removeClass('small');
 			}
 			
-						//go to the corridor
+			//go to the corridor
 					 
 			$('#door_exit').click(function () {
 				
@@ -161,25 +276,33 @@ var game = {
 						
 							// Check if player has completed the vaping quiz
 							var completedQuiz = $.jStorage.get('completed_vaping_quiz', false);
+							console.log("DEBUG: Door clicked! completedQuiz:", completedQuiz);
 							
 							if (!completedQuiz) {
+								console.log("DEBUG: Quiz not completed, door locked");
 								sound_door_locked.play();
 								$('#player').text_cloud('Complete the health education with the fish first!', 2000);
 								return;
+							} else {
+								console.log("DEBUG: Quiz completed, door should be unlocked");
+								// Quiz completed - door is unlocked, proceed to corridor
+								sound_door.play();
+								game.corridor(5,6);
+								return;
 							}
 						
-							//check if player has got the key
+							//check if player has got the key (only if quiz not completed)
 							if ( $.inArray("key", collected) === -1) { 
-
+	
 								sound_door_locked.play();
 								$('#player').text_cloud('Locked!', 1000); 
 							
 							} else if ( $.inArray("key", used) === -1) {
 							
 								items.use('#key');
-
+	
 								$('#option_0').click(function() {
-
+	
 									dialogue_box.destroy();
 									sound_door.play();
 									// Go to room_dirt to show the consequences of poor health choices
@@ -193,7 +316,7 @@ var game = {
 								game.room_dirt(5,6);
 							
 							}
-
+	
 						}  
 					
 				});
@@ -262,11 +385,11 @@ var game = {
 							game.showVideoOverlay();
 						} else {
 							// Normal picture navigation
-							sound_teleport.play();
-							if ( $.inArray("scene_furnace", played) === -1 ) {
-								game.picture_snow(7, 8); 
-							} else {
-								game.picture(7, 8); 
+						sound_teleport.play();
+						if ( $.inArray("scene_furnace", played) === -1 ) {
+							game.picture_snow(7, 8); 
+						} else {
+							game.picture(7, 8); 
 							}
 						}
 					}  
@@ -417,14 +540,22 @@ var game = {
 						
 							// Check if player has completed the vaping quiz
 							var completedQuiz = $.jStorage.get('completed_vaping_quiz', false);
+							console.log("DEBUG: Door clicked! completedQuiz:", completedQuiz);
 							
 							if (!completedQuiz) {
+								console.log("DEBUG: Quiz not completed, door locked");
 								sound_door_locked.play();
 								$('#player').text_cloud('Complete the health education with the fish first!', 2000);
 								return;
+							} else {
+								console.log("DEBUG: Quiz completed, door should be unlocked");
+								// Quiz completed - door is unlocked, proceed to corridor
+								sound_door.play();
+								game.corridor(5,6);
+								return;
 							}
 						
-							//check if player has got the key
+							//check if player has got the key (only if quiz not completed)
 							if ( $.inArray("key", collected) === -1) { 
 
 								sound_door_locked.play();
@@ -2970,7 +3101,7 @@ soundManager.onready(function() {
 	//intro screen
 	$('#the_game').load('intro.html', function() {
 		
-		$('#lightbox, #items, #switch_sound, #settings').hide();
+		$('#lightbox, #items, #switch_sound, #settings').hide(); 
 		
 		// Force reload of intro house image with timestamp
 		setTimeout(function() {

@@ -5,16 +5,16 @@ var npc = {
 			var fish = $('#fish, #fish_click_area');
 			return fish;
 		},
-
+		
 		click_area: function() {
-			if (!$('#fish_click_area').length) {
+				if (!$('#fish_click_area').length) {
 				$('<div/>', {
 					id: 'fish_click_area'
 				})
-				.appendTo('#floor');
+						.appendTo('#floor');
 			}
 		},
-
+	
 		swim: function() {
 			console.log("DEBUG: swim() function has been called."); // Debugging line
 			if ($.inArray("disappear", fish) === -1) {
@@ -23,27 +23,27 @@ var npc = {
 					fps: 8,
 					no_of_frames: 5
 				});
-
+	
 				npc.fish.click_area();
 				npc.fish.move();
 				npc.fish.react();
 
 				// hide key
 				$('#key').hide();
-
+			
 			} else {
 				$(npc.fish.select()).remove();
 				npc.fish.key();
 			}
 		},
+		
+		move: function(repeat) {     
+				var fish = $('#fish');
 
-		move: function(repeat) {
-			var fish = $('#fish');
-
-			if (!repeat) {
+				if (!repeat) {
 				fish.spState(2); // Start with the second row of sprites
-			} else {
-				fish.spToggle().fps(8).spState(2);
+				} else {
+					fish.spToggle().fps(8).spState(2);
 			}
 
 			// Defines the movement loop
@@ -87,7 +87,7 @@ var npc = {
 
 						if (!viewedPicture) {
 							// User hasn't looked at the picture yet
-							dialogue_box.display({
+						dialogue_box.display({
 								character: 'Fish',
 								picture: 'aquarium_fish_big.png',
 								text: 'Hello! Before we can proceed, you need to examine the picture on the wall. Go click on it first, then come back to me.',
@@ -95,9 +95,9 @@ var npc = {
 							});
 
 							$('#options').off('click').on('click', 'li', function() {
-								dialogue_box.destroy();
-								npc.fish.move(true);
-							});
+							dialogue_box.destroy();
+							npc.fish.move(true);
+						});
 						} else if (!watchedVideo) {
 							// User viewed picture but hasn't watched video yet
 							dialogue_box.display({
@@ -126,7 +126,7 @@ var npc = {
 							});
 						} else {
 							// Quiz completed, unlock corridor
-							dialogue_box.display({
+									dialogue_box.display({
 								character: 'Fish',
 								picture: 'aquarium_fish_big.png',
 								text: 'Excellent! You\'ve completed the health education. The corridor is now unlocked. You can proceed to the next area.',
@@ -134,18 +134,19 @@ var npc = {
 							});
 
 							$('#options').off('click').on('click', 'li', function() {
-								dialogue_box.destroy();
-								npc.fish.move(true);
+										dialogue_box.destroy();
+										npc.fish.move(true);
 								// Enable corridor access
 								$('#door_exit').removeClass('locked').addClass('unlocked');
 							});
 						}
 					}
-				});
-			});
+									});
+								});
 		},
 
 		startVapingQuiz: function() {
+			console.log("DEBUG: startVapingQuiz function called!");
 			var quiz = {
 				"question1": {
 					"question": "What is the one common oral health issue associated with frequent vaping? HINT: think about what happens when your mouth is exposed to heat and chemicals frequently.",
@@ -168,21 +169,35 @@ var npc = {
 
 			function displayQuestion() {
 				var questionData = quiz[currentQuestion];
-				dialogue_box.display({
+									dialogue_box.display({
 					character: 'Fish',
 					picture: 'aquarium_fish_big.png',
 					text: questionData.question,
 					options: questionData.options
 				});
 
-				$('#options').off('click').on('click', 'li', function() {
+				// Add quiz-specific class to options after dialogue is rendered
+				setTimeout(function() {
+					$('#options li').addClass('quiz-option');
+				}, 100);
+
+				// Use event delegation specifically for quiz options
+				$('body').off('click.quiz').on('click.quiz', '#options li.quiz-option', function(e) {
+					console.log("Quiz option clicked:", $(this).text());
 					var selectedOption = $(this).text();
 					if (selectedOption === questionData.answer) {
+						// Award 100 coins for correct answer
+						window.awardCoins(100);
+						
 						dialogue_box.display({
 							character: 'Fish',
-							text: 'Correct! Great job understanding the health effects.',
+							text: 'Correct! Great job understanding the health effects. +100 coins!',
 							options: ['Next Question']
 						});
+						// Clean up quiz events and classes
+						$('body').off('click.quiz');
+						$('#options li').removeClass('quiz-option');
+						
 						$('#options').off('click').on('click', 'li', function() {
 							if (currentQuestion === "question1") {
 								currentQuestion = "question2";
@@ -191,7 +206,10 @@ var npc = {
 								currentQuestion = "question3";
 								displayQuestion();
 							} else {
-								// Quiz completed
+								// Quiz completed - clean up quiz events
+								$('body').off('click.quiz');
+								$('#options li').removeClass('quiz-option');
+								
 								dialogue_box.display({
 									character: 'Fish',
 									text: 'Excellent! You\'ve successfully completed the health education quiz. You now understand the important health effects of vaping.',
@@ -200,16 +218,39 @@ var npc = {
 								$('#options').off('click').on('click', 'li', function() {
 									dialogue_box.destroy();
 									npc.fish.move(true);
+									
 									// Mark quiz as completed and unlock corridor
 									$.jStorage.set('completed_vaping_quiz', true);
 									$('#door_exit').removeClass('locked').addClass('unlocked');
-								});
+									
+									console.log("DEBUG: Quiz completed! Corridor should be unlocked.");
+									console.log("DEBUG: completed_vaping_quiz set to:", $.jStorage.get('completed_vaping_quiz'));
+									
+									// Show corridor unlock message
+									setTimeout(function() {
+										$('#player').text_cloud('The corridor door is now unlocked!', 3000);
+									}, 500);
+									
+									// Trigger void merge effect if health was lost
+									if (window.currentHealth < 100) {
+										setTimeout(function() {
+											scene.void_merge_effect();
+										}, 1000);
 							}
 						});
+					}
+				});
 					} else {
+						// Penalize health by 2% for wrong answer
+						window.penalizeHealth(2);
+						
+						// Clean up quiz events and classes
+						$('body').off('click.quiz');
+						$('#options li').removeClass('quiz-option');
+						
 						dialogue_box.display({
 							character: 'Fish',
-							text: 'Not quite right. Think about the hint and try again.',
+							text: 'Not quite right. Think about the hint and try again. -2% health!',
 							options: ['Try Again']
 						});
 						$('#options').off('click').on('click', 'li', function() {
@@ -232,7 +273,7 @@ var npc = {
 			}, 200)
 			.css('background-position','0 0'); 
 		},
-
+		
 		key: function() {
 			//take the key
 			$('#aquarium').find('#key').click(function () {

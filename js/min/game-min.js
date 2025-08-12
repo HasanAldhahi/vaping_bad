@@ -1,3 +1,60 @@
+// Global coin reward system
+window.awardCoins = function(amount) {
+	if (!window.coinCount) {
+		window.coinCount = $.jStorage.get('coinCount') || 0;
+	}
+	
+	window.coinCount += amount;
+	$.jStorage.set('coinCount', window.coinCount);
+	
+	// Update display
+	$('#coin-count').text(window.coinCount);
+	
+	// Add animation effect
+	$('#coin-counter').addClass('coin-earned');
+	setTimeout(function() {
+		$('#coin-counter').removeClass('coin-earned');
+	}, 1000);
+	
+	// Show floating message
+	var message = $('<div class="floating-message">+' + amount + ' coins!</div>');
+	message.css({
+		position: 'absolute',
+		top: '50px',
+		left: '50%',
+		transform: 'translateX(-50%)',
+		color: '#ffd700',
+		fontSize: '18px',
+		fontWeight: 'bold',
+		zIndex: 10000,
+		pointerEvents: 'none'
+	});
+	$('body').append(message);
+	message.fadeOut(2000, function() {
+		message.remove();
+	});
+};
+
+// Global health penalty system
+window.penalizeHealth = function(penalty) {
+	if (!window.currentHealth) {
+		window.currentHealth = 100;
+	}
+	
+	window.currentHealth -= penalty;
+	if (window.currentHealth < 0) window.currentHealth = 0;
+	
+	// Update display
+	$('#health-percentage').text(Math.round(window.currentHealth) + '%');
+	$('#health-bar-inner').css('width', window.currentHealth + '%');
+	
+	// Add animation effect
+	$('#health-bar-container').addClass('health-penalty');
+	setTimeout(function() {
+		$('#health-bar-container').removeClass('health-penalty');
+	}, 1000);
+};
+
 var game = {
 
 	room: function(x,y) {
@@ -43,6 +100,18 @@ var game = {
 		
 		execute: function() {
 			console.log("DEBUG: Room execute function called!");
+			
+			// Show the health bar and initialize coin counter when entering room
+			$('#health-bar-container').fadeIn();
+			
+			// Initialize coin count from storage
+			window.coinCount = $.jStorage.get('coinCount') || 0;
+			$('#coin-count').text(window.coinCount);
+			
+			// Initialize current health
+			window.currentHealth = 100;
+			$('#health-percentage').text('100%');
+			$('#health-bar-inner').css('width', '100%');
 			
 			//check if intro scene has been played
 			if ( $.inArray("scene_intro", played) === -1 ) {
@@ -161,25 +230,33 @@ var game = {
 						
 							// Check if player has completed the vaping quiz
 							var completedQuiz = $.jStorage.get('completed_vaping_quiz', false);
+							console.log("DEBUG: Door clicked! completedQuiz:", completedQuiz);
 							
 							if (!completedQuiz) {
+								console.log("DEBUG: Quiz not completed, door locked");
 								sound_door_locked.play();
 								$('#player').text_cloud('Complete the health education with the fish first!', 2000);
 								return;
+														} else {
+								console.log("DEBUG: Quiz completed, door should be unlocked");
+								// Quiz completed - door is unlocked, proceed to corridor
+								sound_door.play();
+								game.corridor(5,6);
+								return;
 							}
 						
-							//check if player has got the key
+							//check if player has got the key (only if quiz not completed)
 							if ( $.inArray("key", collected) === -1) { 
-
+	
 								sound_door_locked.play();
 								$('#player').text_cloud('Locked!', 1000); 
 							
 							} else if ( $.inArray("key", used) === -1) {
 							
 								items.use('#key');
-
+	
 								$('#option_0').click(function() {
-
+	
 									dialogue_box.destroy();
 									sound_door.play();
 									// Go to room_dirt to show the consequences of poor health choices
@@ -191,7 +268,7 @@ var game = {
 								sound_door.play();
 								// Go to room_dirt to show the consequences of poor health choices
 								game.room_dirt(5,6);
-							
+														
 							}
 
 						}  
@@ -417,11 +494,15 @@ var game = {
 						
 							// Check if player has completed the vaping quiz
 							var completedQuiz = $.jStorage.get('completed_vaping_quiz', false);
+							console.log("DEBUG: Door clicked! completedQuiz:", completedQuiz);
 							
 							if (!completedQuiz) {
+								console.log("DEBUG: Quiz not completed, door locked");
 								sound_door_locked.play();
 								$('#player').text_cloud('Complete the health education with the fish first!', 2000);
 								return;
+							} else {
+								console.log("DEBUG: Quiz completed, door should be unlocked");
 							}
 						
 							//check if player has got the key

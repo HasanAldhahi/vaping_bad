@@ -449,6 +449,59 @@ var scene = {
 				.attr('data-tooltip', 'It doesn\'t work anymore...')
 				.css('cursor', 'help');
 		}
+	},
+
+	void_merge_effect: function() {
+		scene.no_click(true, 'rgba(0, 0, 0, .5)');
+		$('#settings, #button, #switch_sound').addClass('dim');
+
+		var $player = $('#player'),
+			$sprite = $('#sprite'),
+			$mergedPlayer = $('<div id="dark_character" />').appendTo('#floor').hide();
+
+		setTimeout(function() {
+			$sprite.css('background-position', '-310px 0');
+			
+			$player.text_cloud('Something feels... different...', 2000);
+
+			setTimeout(function() {
+				sound_screech2.play();
+
+				$player
+					.css('background-image', 'url(images/void_merge.png)')
+					.sprite({
+						fps: 12,
+						no_of_frames: 12,
+						play_frames: 12
+					})
+					.delay(1000)
+					.fadeOut(500);
+
+				$mergedPlayer
+					.sprite({
+						no_of_frames: 7
+					})
+					.delay(1000)
+					.fadeIn(500)
+					.delay(1500)
+					.fadeOut(500);
+
+				setTimeout(function() {
+					scene.no_click(false);
+					$('#settings, #button, #switch_sound').removeClass('dim');
+					
+					// Reset player appearance
+					$player.css('background-image', '').fadeIn(500);
+					$sprite.css('background-position', '0 0');
+					
+					var get_played = $.jStorage.get('played');
+					get_played.push('scene_void_merge_quiz');
+					$.jStorage.set('played', get_played);
+				}, 3000);
+
+			}, 1500);
+
+		}, 100);
 	// bathroom_void_shower - END
 	},
 

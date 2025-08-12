@@ -45,9 +45,13 @@ var dialogue_box = {
 				id: 'dialogue_box',
 				'class': class_name
 			})
-			.css('opacity',0)
+			.css({
+				'opacity': 0,
+				'z-index': 10000,
+				'position': 'fixed'
+			})
 			.appendTo('#the_game')
-			.append('<ul id="options"></ul>')
+			.append('<ul id="options" style="z-index: 10001; position: relative; pointer-events: auto;"></ul>')
 			.animate({
 				opacity:1
 			}, 500, 'linear');

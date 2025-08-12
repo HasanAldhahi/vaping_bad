@@ -30,6 +30,121 @@
 
 @import "keypad.less";
 
+/* Health Bar & Coin Counter Styles - Room Specific */
+#health-bar-container {
+	display: none; /* Hidden by default, we'll show it with JS */
+	position: absolute;
+	top: 15px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	padding: 8px 15px;
+	background: rgba(0, 0, 0, 0.7);
+	border-radius: 5px;
+	gap: 15px;
+	border: 1px solid #555;
+}
+
+#coin-counter {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 16px;
+	color: #ffd700; /* Gold color for coins */
+	font-weight: bold;
+}
+
+#coin-icon {
+	font-size: 18px;
+}
+
+#coin-count {
+	min-width: 30px;
+	text-align: center;
+}
+
+#health-bar-icon {
+	font-size: 20px;
+	color: #ff3927; /* Red color for the heart */
+}
+
+#health-bar-outer {
+	width: 280px; /* Larger width for room display */
+	height: 24px; /* Larger height for better visibility */
+	border: 2px solid #21bef3;
+	border-radius: 3px;
+	overflow: hidden;
+	background: rgba(0, 0, 0, 0.4);
+	position: relative;
+}
+
+#health-bar-inner {
+	width: 100%; /* Starts at full health */
+	height: 100%;
+	background: url(../images/preload_bar.png) no-repeat;
+	background-size: 280px 24px; /* Scale to fit larger bar */
+	transition: width 1s linear; /* Smoothly animates the width change */
+}
+
+#health-percentage {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	color: #fff;
+	font-size: 12px;
+	font-weight: bold;
+	text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+	z-index: 10;
+	pointer-events: none;
+}
+
+/* Coin Animation Effects */
+.coin-earned {
+	animation: coinPulse 0.5s ease-in-out;
+}
+
+/* Health Penalty Animation */
+.health-penalty {
+	animation: healthPenalty 0.5s ease-in-out;
+}
+
+@keyframes coinPulse {
+	0% { transform: scale(1); }
+	50% { transform: scale(1.2); }
+	100% { transform: scale(1); }
+}
+
+.coin-reward {
+	position: fixed;
+	top: 60px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(255, 215, 0, 0.9);
+	color: #000;
+	padding: 8px 16px;
+	border-radius: 20px;
+	font-weight: bold;
+	font-size: 16px;
+	z-index: 10001;
+	animation: coinRewardShow 2s ease-in-out;
+}
+
+@keyframes coinRewardShow {
+	0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+	20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+	80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+	100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+@keyframes healthPenalty {
+	0% { transform: translateX(-50%) scale(1); border-color: #21bef3; }
+	50% { transform: translateX(-50%) scale(1.05); border-color: #ff3927; }
+	100% { transform: translateX(-50%) scale(1); border-color: #21bef3; }
+}
+
 ::selection {
 	background: transparent;
 	color:#fff;
@@ -105,8 +220,9 @@ html, body,
 	position: fixed;
 	left:50%;
 	bottom:40px;
-	z-index: 9999;
+	z-index: 10000;
 	background: rgba(0, 0, 0, .7);
+	pointer-events: auto;
 	&.big {
 		width: 640px;
 		margin-left: -320px;
@@ -131,16 +247,29 @@ html, body,
 }
 
 #options {
-	color:#fefefe
+	color:#fefefe;
+	z-index: 10001;
+	position: relative;
+	pointer-events: auto;
 }
 
 #options li {
 	padding-left: 20px;
 	background: url(../images/li.gif) no-repeat 0 12px;
-	cursor:pointer;
+	cursor: pointer !important;
 	.transition('color', 0.5s, linear);
+	pointer-events: auto !important;
+	z-index: 10002;
+	position: relative;
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
 	&:hover {
-		color:#bce9f4
+		color: #bce9f4;
+		background-color: rgba(188, 233, 244, 0.1);
+	}
+	&:active {
+		background-color: rgba(188, 233, 244, 0.2);
 	}
 }
 
@@ -149,7 +278,8 @@ html, body,
 	left:0;
 	top:0;
 	z-index:8888;
-	background:rgba(0,0,0,.2)
+	background:rgba(0,0,0,.2);
+	pointer-events:none;
 }
 
 #white,
