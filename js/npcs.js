@@ -189,6 +189,9 @@ var npc = {
 						// Award 100 coins for correct answer
 						window.awardCoins(100);
 						
+						// Play absorbing sound for correct answer
+						sound_absorbing.play();
+						
 						dialogue_box.display({
 							character: 'Fish',
 							text: 'Correct! Great job understanding the health effects. +100 coins!',
@@ -209,6 +212,9 @@ var npc = {
 								// Quiz completed - clean up quiz events
 								$('body').off('click.quiz');
 								$('#options li').removeClass('quiz-option');
+								
+								// Play beep sound for quiz completion
+								sound_beep.play();
 								
 								dialogue_box.display({
 									character: 'Fish',
