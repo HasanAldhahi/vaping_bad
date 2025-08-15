@@ -49,6 +49,36 @@
   background-size: contain;
   z-index: 100;
 }
+/* Video Intro Styles */
+#video-intro-overlay {
+  cursor: pointer;
+}
+#video-intro-overlay #intro-video {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+#video-intro-overlay #video-play-button {
+  font-family: Arial, sans-serif;
+  transition: all 0.3s ease;
+}
+#video-intro-overlay #video-play-button:hover {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  transform: translate(-50%, -50%) scale(1.05) !important;
+}
+#video-intro-overlay #video-play-button:active {
+  transform: translate(-50%, -50%) scale(0.95) !important;
+}
+#video-intro-overlay::after {
+  content: "Click to skip";
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  pointer-events: none;
+}
+
 /* Health Bar & Coin Counter Styles - Room Specific */
 #health-bar-container {
   display: none;

@@ -3096,8 +3096,91 @@ var game = {
 //game - END  
 };
 
-soundManager.onready(function() {
+// New function to play video intro
+function playVideoIntro() {
+	// Create video intro overlay
+	var videoOverlay = $('<div id="video-intro-overlay"></div>').css({
+		position: 'fixed',
+		top: 0,
+		left: 0,
+		width: '100%',
+		height: '100%',
+		backgroundColor: 'black',
+		zIndex: 10000,
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center'
+	});
 
+	var video = $('<video id="intro-video" muted></video>').css({
+		maxWidth: '100%',
+		maxHeight: '100%',
+		width: 'auto',
+		height: 'auto'
+	}).attr({
+		src: 'Intro.mp4',
+		type: 'video/mp4',
+		preload: 'auto'
+	});
+
+	videoOverlay.append(video);
+	$('body').append(videoOverlay);
+
+	// Try to play the video - handle autoplay restrictions
+	var videoElement = video[0];
+	var playPromise = videoElement.play();
+
+	if (playPromise !== undefined) {
+		playPromise.then(function() {
+			console.log("Video autoplay started successfully");
+		}).catch(function(error) {
+			console.log("Autoplay failed, adding click to play:", error);
+			// Add a play button overlay if autoplay fails
+			var playButton = $('<div id="video-play-button">▶ Click to Play Video</div>').css({
+				position: 'absolute',
+				top: '50%',
+				left: '50%',
+				transform: 'translate(-50%, -50%)',
+				backgroundColor: 'rgba(0,0,0,0.8)',
+				color: 'white',
+				padding: '20px 40px',
+				borderRadius: '10px',
+				fontSize: '18px',
+				cursor: 'pointer',
+				zIndex: 10001
+			});
+			
+			videoOverlay.append(playButton);
+			
+			playButton.click(function() {
+				playButton.remove();
+				videoElement.play();
+			});
+		});
+	}
+
+	// When video ends, fade out and start the game intro
+	video.on('ended', function() {
+		videoOverlay.fadeOut(1000, function() {
+			videoOverlay.remove();
+			startGameIntro();
+		});
+	});
+
+	// Allow clicking to skip video (but not on the play button)
+	videoOverlay.on('click', function(e) {
+		if (!$(e.target).is('#video-play-button')) {
+			videoElement.pause();
+			videoOverlay.fadeOut(500, function() {
+				videoOverlay.remove();
+				startGameIntro();
+			});
+		}
+	});
+}
+
+// Separate function for the original intro screen
+function startGameIntro() {
 	//intro screen
 	$('#the_game').load('intro.html', function() {
 		
@@ -3266,6 +3349,10 @@ soundManager.onready(function() {
 		});
 
 	});
+}
 
+soundManager.onready(function() {
+	// Start with video intro instead of going directly to game intro
+	playVideoIntro();
 });
 

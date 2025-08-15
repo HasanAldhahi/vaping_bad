@@ -30,6 +30,41 @@
 
 @import "keypad.less";
 
+/* Video Intro Styles */
+#video-intro-overlay {
+    cursor: pointer;
+    
+    #intro-video {
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    
+    #video-play-button {
+        font-family: Arial, sans-serif;
+        transition: all 0.3s ease;
+        
+        &:hover {
+            background-color: rgba(0,0,0,0.9) !important;
+            transform: translate(-50%, -50%) scale(1.05) !important;
+        }
+        
+        &:active {
+            transform: translate(-50%, -50%) scale(0.95) !important;
+        }
+    }
+    
+    &::after {
+        content: "Click to skip";
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        color: rgba(255,255,255,0.7);
+        font-size: 14px;
+        font-family: Arial, sans-serif;
+        pointer-events: none;
+    }
+}
+
 /* Health Bar & Coin Counter Styles - Room Specific */
 #health-bar-container {
 	display: none; /* Hidden by default, we'll show it with JS */
